@@ -93,9 +93,12 @@ function drawStartScreen() {
     doodler.width,
     doodler.height
   );
+  context.fillStyle = "Red";
+  context.font = "40px sans-serif";
+  context.fillText("Doodle Jump", boardWidth / 6, boardHeight / 2);
   context.fillStyle = "black";
   context.font = "20px sans-serif";
-  context.fillText("Click to Start", boardWidth / 3.5, boardHeight / 2);
+  context.fillText("Click to Start", boardWidth / 3, boardHeight / 1.5);
 }
 
 function update() {
@@ -165,13 +168,12 @@ function update() {
   context.fillText(`High Score: ${highScore}`, 5, 40);
 
   if (gameOver) {
+    context.fillStyle = "Red";
+    context.font = "40px sans-serif";
+    context.fillText("Game Over", boardWidth / 5, boardHeight / 2);
     context.fillStyle = "black";
     context.font = "16px sans-serif";
-    context.fillText(
-      "Game Over: Press 'Space' to Restart",
-      boardWidth / 7,
-      (boardHeight * 7) / 8
-    );
+    context.fillText("Press 'Space' to Restart", boardWidth / 4, boardHeight / 1.5);
   }
 }
 
