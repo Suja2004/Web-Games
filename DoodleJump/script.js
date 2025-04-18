@@ -20,13 +20,13 @@ let doodler = {
   height: doodlerHeight,
 };
 
-//physics
+// physics
 let velocityX = 0;
 let velocityY = 0;
 let initialVelocityY = -3.5;
 let gravity = 0.05;
 
-//platform
+// platform
 let platformArray = [];
 let platformWidth = 60;
 let platformHeight = 18;
@@ -34,8 +34,9 @@ let platformImg;
 
 // score
 let score = 0;
-let maxScore = parseInt(localStorage.getItem("maxScore")) || 0;
+let maxScore = 0;
 let gameOver = false;
+let gameStarted = false;
 
 window.onload = function () {
   board = document.getElementById("board");
@@ -43,11 +44,6 @@ window.onload = function () {
   board.width = boardWidth;
   context = board.getContext("2d");
 
-  //draw
-  //context.fillStyle = "green";
-  //context.fillRect(doodler.x, doodler.y, doodler.width, doodler.height);
-
-  //load imgs
   doodlerRightImg = new Image();
   doodlerRightImg.src = "./assets/doodler-right.png";
   doodler.img = doodlerRightImg;
@@ -60,6 +56,7 @@ window.onload = function () {
       doodler.width,
       doodler.height
     );
+    drawStartScreen();
   };
 
   doodlerLeftImg = new Image();
@@ -69,13 +66,40 @@ window.onload = function () {
   platformImg.src = "./assets/platform.png";
 
   velocityY = initialVelocityY;
+
   placePlatforms();
 
-  requestAnimationFrame(update);
+  board.addEventListener("click", startGame);
   document.addEventListener("keydown", moveDoodler);
+
+  // get high score from localStorage
+  maxScore = parseInt(localStorage.getItem("maxScore")) || 0;
 };
 
+function startGame() {
+  if (!gameStarted) {
+    gameStarted = true;
+    board.removeEventListener("click", startGame);
+    requestAnimationFrame(update);
+  }
+}
+
+function drawStartScreen() {
+  context.clearRect(0, 0, boardWidth, boardHeight);
+  context.drawImage(
+    doodler.img,
+    doodler.x,
+    doodler.y,
+    doodler.width,
+    doodler.height
+  );
+  context.fillStyle = "black";
+  context.font = "20px sans-serif";
+  context.fillText("Click to Start", boardWidth / 3.5, boardHeight / 2);
+}
+
 function update() {
+  if (!gameStarted) return;
   requestAnimationFrame(update);
 
   if (gameOver) {
@@ -84,7 +108,6 @@ function update() {
 
   context.clearRect(0, 0, boardWidth, boardHeight);
 
-  //  doodler
   doodler.x += velocityX;
 
   if (doodler.x > boardWidth) {
@@ -108,7 +131,6 @@ function update() {
     doodler.height
   );
 
-  //platforms
   for (let i = 0; i < platformArray.length; i++) {
     let platform = platformArray[i];
 
@@ -119,6 +141,7 @@ function update() {
     if (detectCollision(doodler, platform) && velocityY >= 0) {
       velocityY = initialVelocityY;
     }
+
     context.drawImage(
       platform.img,
       platform.x,
@@ -128,19 +151,14 @@ function update() {
     );
   }
 
-  //   clear platforms and add new
   while (platformArray.length > 0 && platformArray[0].y >= boardHeight - 50) {
     platformArray.shift();
     newPlatform();
   }
 
-  //   score
   updateScore();
-  //   context.fillStyle = "black";
-  //   context.font = "16px sans-serif";
-  //   context.fillText(score, 5, 20);
-  let highScore = localStorage.getItem("highScore") || 0;
 
+  const highScore = localStorage.getItem("highScore") || 0;
   context.fillStyle = "black";
   context.font = "16px sans-serif";
   context.fillText(`Score: ${score}`, 5, 20);
@@ -165,8 +183,6 @@ function moveDoodler(e) {
     velocityX = -2;
     doodler.img = doodlerLeftImg;
   } else if (e.code == "Space" && gameOver) {
-    // reset
-
     doodler = {
       img: doodlerRightImg,
       x: doodlerX,
@@ -187,7 +203,6 @@ function moveDoodler(e) {
 function placePlatforms() {
   platformArray = [];
 
-  //starting platforms
   let platform = {
     img: platformImg,
     x: boardWidth / 2,
@@ -196,15 +211,6 @@ function placePlatforms() {
     height: platformHeight,
   };
   platformArray.push(platform);
-
-  //   platform = {
-  //     img: platformImg,
-  //     x: boardWidth / 2,
-  //     y: boardHeight - 150,
-  //     width: platformWidth,
-  //     height: platformHeight,
-  //   };
-  //   platformArray.push(platform);
 
   for (let i = 0; i < 6; i++) {
     let randomX = Math.floor((Math.random() * boardWidth * 3) / 4);
@@ -248,7 +254,6 @@ function updateScore() {
     if (score < maxScore) {
       score = maxScore;
 
-      // Save to localStorage if it's the highest ever
       const highScore = parseInt(localStorage.getItem("highScore")) || 0;
       if (score > highScore) {
         localStorage.setItem("highScore", score);
