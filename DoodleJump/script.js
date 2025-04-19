@@ -38,6 +38,10 @@ let maxScore = 0;
 let gameOver = false;
 let gameStarted = false;
 
+// controls
+let leftClick = document.getElementById("left");
+let rightClick = document.getElementById("right");
+
 window.onload = function () {
   board = document.getElementById("board");
   board.height = boardHeight;
@@ -49,13 +53,7 @@ window.onload = function () {
   doodler.img = doodlerRightImg;
 
   doodlerRightImg.onload = () => {
-    context.drawImage(
-      doodler.img,
-      doodler.x,
-      doodler.y,
-      doodler.width,
-      doodler.height
-    );
+    context.drawImage(doodler.img, doodler.x, doodler.y, doodler.width, doodler.height);
     drawStartScreen();
   };
 
@@ -69,15 +67,47 @@ window.onload = function () {
 
   placePlatforms();
 
-  board.addEventListener("click", startGame);
+  document.addEventListener("click", startGame);
   document.addEventListener("keydown", moveDoodler);
 
-  // get high score from localStorage
+  // Button Controls - click and touch
+  leftClick.addEventListener("mousedown", () => {
+    velocityX = -2;
+    doodler.img = doodlerLeftImg;
+  });
+  rightClick.addEventListener("mousedown", () => {
+    velocityX = 2;
+    doodler.img = doodlerRightImg;
+  });
+  leftClick.addEventListener("mouseup", () => {
+    velocityX = 0;
+  });
+  rightClick.addEventListener("mouseup", () => {
+    velocityX = 0;
+  });
+
+  leftClick.addEventListener("touchstart", () => {
+    velocityX = -2;
+    doodler.img = doodlerLeftImg;
+  });
+  rightClick.addEventListener("touchstart", () => {
+    velocityX = 2;
+    doodler.img = doodlerRightImg;
+  });
+  leftClick.addEventListener("touchend", () => {
+    velocityX = 0;
+  });
+  rightClick.addEventListener("touchend", () => {
+    velocityX = 0;
+  });
+
   maxScore = parseInt(localStorage.getItem("maxScore")) || 0;
 };
 
 function startGame() {
-  if (!gameStarted) {
+  if (gameOver) {
+    restartGame();
+  } else if (!gameStarted) {
     gameStarted = true;
     board.removeEventListener("click", startGame);
     requestAnimationFrame(update);
@@ -86,29 +116,19 @@ function startGame() {
 
 function drawStartScreen() {
   context.clearRect(0, 0, boardWidth, boardHeight);
-  context.drawImage(
-    doodler.img,
-    doodler.x,
-    doodler.y,
-    doodler.width,
-    doodler.height
-  );
+  context.drawImage(doodler.img, doodler.x, doodler.y, doodler.width, doodler.height);
   context.fillStyle = "Red";
   context.font = "40px sans-serif";
   context.fillText("Doodle Jump", boardWidth / 6, boardHeight / 2);
   context.fillStyle = "black";
   context.font = "20px sans-serif";
-  context.fillText("Click to Start", boardWidth / 3, boardHeight / 1.5);
+  context.fillText("Start", boardWidth / 2.3, boardHeight / 1.5);
 }
 
 function update() {
-  if (!gameStarted) return;
+  if (!gameStarted || gameOver) return;
+
   requestAnimationFrame(update);
-
-  if (gameOver) {
-    return;
-  }
-
   context.clearRect(0, 0, boardWidth, boardHeight);
 
   doodler.x += velocityX;
@@ -124,15 +144,10 @@ function update() {
 
   if (doodler.y > boardHeight) {
     gameOver = true;
+    gameStarted=false;
   }
 
-  context.drawImage(
-    doodler.img,
-    doodler.x,
-    doodler.y,
-    doodler.width,
-    doodler.height
-  );
+  context.drawImage(doodler.img, doodler.x, doodler.y, doodler.width, doodler.height);
 
   for (let i = 0; i < platformArray.length; i++) {
     let platform = platformArray[i];
@@ -145,13 +160,7 @@ function update() {
       velocityY = initialVelocityY;
     }
 
-    context.drawImage(
-      platform.img,
-      platform.x,
-      platform.y,
-      platform.width,
-      platform.height
-    );
+    context.drawImage(platform.img, platform.x, platform.y, platform.width, platform.height);
   }
 
   while (platformArray.length > 0 && platformArray[0].y >= boardHeight - 50) {
@@ -170,10 +179,10 @@ function update() {
   if (gameOver) {
     context.fillStyle = "Red";
     context.font = "40px sans-serif";
-    context.fillText("Game Over", boardWidth / 5, boardHeight / 2);
+    context.fillText("Game Over", boardWidth / 4.5, boardHeight / 2);
     context.fillStyle = "black";
-    context.font = "16px sans-serif";
-    context.fillText("Press 'Space' to Restart", boardWidth / 4, boardHeight / 1.5);
+    context.font = "20px sans-serif";
+    context.fillText("Restart", boardWidth / 2.5, boardHeight / 1.5);
   }
 }
 
@@ -185,20 +194,7 @@ function moveDoodler(e) {
     velocityX = -2;
     doodler.img = doodlerLeftImg;
   } else if (e.code == "Space" && gameOver) {
-    doodler = {
-      img: doodlerRightImg,
-      x: doodlerX,
-      y: doodlerY,
-      width: doodlerWidth,
-      height: doodlerHeight,
-    };
-
-    velocityX = 0;
-    velocityY = initialVelocityY;
-    score = 0;
-    maxScore = 0;
-    gameOver = false;
-    placePlatforms();
+    restartGame();
   }
 }
 
@@ -229,7 +225,6 @@ function placePlatforms() {
 
 function newPlatform() {
   let randomX = Math.floor((Math.random() * boardWidth * 3) / 4);
-
   let platform = {
     img: platformImg,
     x: randomX,
@@ -255,7 +250,6 @@ function updateScore() {
     maxScore += points;
     if (score < maxScore) {
       score = maxScore;
-
       const highScore = parseInt(localStorage.getItem("highScore")) || 0;
       if (score > highScore) {
         localStorage.setItem("highScore", score);
@@ -264,4 +258,21 @@ function updateScore() {
   } else if (velocityY >= 0) {
     maxScore -= points;
   }
+}
+
+function restartGame() {
+  doodler = {
+    img: doodlerRightImg,
+    x: doodlerX,
+    y: doodlerY,
+    width: doodlerWidth,
+    height: doodlerHeight,
+  };
+
+  velocityX = 0;
+  velocityY = initialVelocityY;
+  score = 0;
+  maxScore = 0;
+  gameOver = false;
+  placePlatforms();
 }
